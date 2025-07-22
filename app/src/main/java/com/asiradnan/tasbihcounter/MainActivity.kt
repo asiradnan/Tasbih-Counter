@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,27 +20,44 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Cached
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -56,27 +75,110 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopBar(modifier: Modifier = Modifier, onLeftHandToggle :() -> Unit, leftHandEnabled: Boolean) {
+    CenterAlignedTopAppBar(
+        title = {
+            Text("Tasbih Counter")
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.primary,
+        ),
+        navigationIcon = {
+            IconButton(onClick = {}) {
+                Icon(
+                    painter = painterResource(R.drawable.tasbih),
+                    contentDescription = "Moon icon as logo"
+                )
+            }
+        },
+        actions = {
+            Box() {
+                var expanded by remember { mutableStateOf(false) }
+                IconButton(onClick = {
+                    expanded = !expanded
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings icon"
+                    )
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(text = "Left Hand Mode")
+
+                        },
+                        onClick = { /* Do something... */ },
+                        trailingIcon = {
+                            Switch(checked = leftHandEnabled, onCheckedChange = {onLeftHandToggle()})
+                        }
+                    )
+                }
+            }
+        },
+    )
+}
+
+
 @Composable
 fun Display(modifier: Modifier = Modifier, count: Int) {
-    Surface (
-        modifier = modifier
+    OutlinedCard(
+        modifier = Modifier
             .fillMaxWidth(0.8f),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = ButtonDefaults.outlinedButtonBorder(true).copy(width = 1.dp),
     ) {
         Text(
             text = count.toString(),
             style = MaterialTheme.typography.displayLarge,
             textAlign = TextAlign.Center,
-            modifier = modifier.padding(16.dp)
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         )
-
     }
-
 }
 
 @Composable
-fun Buttons(
+fun DecrementButton(modifier: Modifier = Modifier, count: Int, onDecrement: () -> Unit) {
+    Button(
+        onClick = { onDecrement() },
+        modifier = modifier
+            .aspectRatio(1f),
+        shape = CircleShape,
+        enabled = count > 0,
+        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Remove,
+            contentDescription = null,
+            modifier = modifier.fillMaxSize(0.75f)
+        )
+    }
+}
+
+@Composable
+fun IncrementButton(modifier: Modifier = Modifier, onIncrement: () -> Unit) {
+    Button(
+        onClick = { onIncrement() },
+        modifier = modifier
+            .aspectRatio(1f),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = null,
+            modifier = modifier.fillMaxSize(0.75f)
+        )
+    }
+}
+
+@Composable
+fun RightHandButtons(
     modifier: Modifier = Modifier,
     count: Int,
     onIncrement: () -> Unit,
@@ -88,35 +190,32 @@ fun Buttons(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Spacer(modifier = modifier.weight(0.6f))
-        Button(
-            onClick = { onDecrement() },
-            modifier = modifier
-                .weight(2f)
-                .aspectRatio(1f),
-            shape = CircleShape,
-            enabled = count > 0
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Remove,
-                contentDescription = null,
-                modifier = modifier.fillMaxSize(0.75f)
-            )
-        }
-        Spacer(modifier = modifier.weight(0.25f))
-        Button(
-            onClick = { onIncrement() },
-            modifier = modifier
-                .weight(3f)
-                .aspectRatio(1f),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = null,
-                modifier = modifier.fillMaxSize(0.75f)
-            )
-        }
-        Spacer(modifier = modifier.weight(0.6f))
+        Spacer(modifier = modifier.weight(0.4f))
+        DecrementButton(modifier = modifier.weight(1.5f), count = count, { onDecrement() })
+        Spacer(modifier = modifier.weight(0.4f))
+        IncrementButton(modifier = modifier.weight(2.75f), onIncrement = { onIncrement() })
+        Spacer(modifier = modifier.weight(0.4f))
+    }
+}
+
+@Composable
+fun LeftHandButtons(
+    modifier: Modifier = Modifier,
+    count: Int,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Spacer(modifier = modifier.weight(0.4f))
+        IncrementButton(modifier = modifier.weight(2.75f), onIncrement = { onIncrement() })
+        Spacer(modifier = modifier.weight(0.4f))
+        DecrementButton(modifier = modifier.weight(1.5f), count = count, { onDecrement() })
+        Spacer(modifier = modifier.weight(0.4f))
     }
 }
 
@@ -131,9 +230,9 @@ fun ResetButton(modifier: Modifier = Modifier, onReset: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Outlined.Cached,
-            contentDescription = null
+            contentDescription = null,
+            Modifier.size(30.dp)
         )
-        Spacer(modifier.width(10.dp))
         Text(
             text = "Reset Counter",
             style = MaterialTheme.typography.titleLarge,
@@ -146,8 +245,13 @@ fun ResetButton(modifier: Modifier = Modifier, onReset: () -> Unit) {
 @Composable
 private fun MainScreen() {
     var count by rememberSaveable { mutableStateOf(0) }
+    var leftHandEnabled by rememberSaveable { mutableStateOf(false) }
     TasbihCounterTheme {
-        Scaffold { innerPadding ->
+        Scaffold(
+            topBar = {
+                TopBar(Modifier, onLeftHandToggle = {leftHandEnabled = !leftHandEnabled}, leftHandEnabled = leftHandEnabled)
+            }
+        ) { innerPadding ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -158,12 +262,21 @@ private fun MainScreen() {
                 Spacer(modifier = Modifier.weight(0.1f))
                 Display(modifier = Modifier, count)
                 Spacer(modifier = Modifier.weight(0.25f))
-                Buttons(
-                    modifier = Modifier,
-                    count,
-                    onIncrement = { count++ },
-                    onDecrement = { count-- })
-                Spacer(modifier = Modifier.weight(0.05f))
+                if (leftHandEnabled)
+                    LeftHandButtons(
+                        modifier = Modifier,
+                        count,
+                        onIncrement = { count++ },
+                        onDecrement = { count-- }
+                    )
+                else
+                    RightHandButtons(
+                        modifier = Modifier,
+                        count,
+                        onIncrement = { count++ },
+                        onDecrement = { count-- }
+                    )
+                Spacer(modifier = Modifier.weight(0.06f))
                 ResetButton(modifier = Modifier, onReset = { count = 0 })
                 Spacer(modifier = Modifier.weight(0.04f))
             }
