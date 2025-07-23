@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Remove
@@ -77,7 +80,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(modifier: Modifier = Modifier, onLeftHandToggle :() -> Unit, leftHandEnabled: Boolean) {
+fun TopBar(modifier: Modifier = Modifier, onLeftHandToggle: () -> Unit, leftHandEnabled: Boolean) {
     CenterAlignedTopAppBar(
         title = {
             Text("Tasbih Counter")
@@ -116,7 +119,9 @@ fun TopBar(modifier: Modifier = Modifier, onLeftHandToggle :() -> Unit, leftHand
                         },
                         onClick = { /* Do something... */ },
                         trailingIcon = {
-                            Switch(checked = leftHandEnabled, onCheckedChange = {onLeftHandToggle()})
+                            Switch(
+                                checked = leftHandEnabled,
+                                onCheckedChange = { onLeftHandToggle() })
                         }
                     )
                 }
@@ -125,6 +130,57 @@ fun TopBar(modifier: Modifier = Modifier, onLeftHandToggle :() -> Unit, leftHand
     )
 }
 
+@Preview
+@Composable
+fun DuaDropDown(modifier: Modifier = Modifier) {
+    var itemPosition by rememberSaveable { mutableStateOf(0) }
+    var expanded by remember { mutableStateOf(false) }
+    val duas = listOf("Subhanallah", "Alhamdulillah", "Astagfirullah")
+    Box(
+        modifier = modifier
+            .fillMaxWidth(0.8f),
+    ) {
+        OutlinedCard(
+            border = ButtonDefaults.outlinedButtonBorder(true).copy(width = 1.5.dp),
+            shape = MaterialTheme.shapes.small,
+//            elevation = CardDefaults.outlinedCardElevation(1.dp)
+        )
+        {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = modifier
+                    .padding(all = 12.dp)
+                    .clickable { expanded = !expanded }
+                    .fillMaxWidth()
+            ) {
+
+                Text(text = duas[itemPosition])
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    modifier = modifier.size(32.dp)
+                )
+            }
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = modifier.fillMaxWidth(0.8f)
+        ) {
+
+            duas.forEachIndexed { idx, dua ->
+                DropdownMenuItem(
+                    text = { Text(text = dua) },
+                    onClick = {
+                        itemPosition = idx
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun Display(modifier: Modifier = Modifier, count: Int) {
@@ -249,7 +305,11 @@ private fun MainScreen() {
     TasbihCounterTheme {
         Scaffold(
             topBar = {
-                TopBar(Modifier, onLeftHandToggle = {leftHandEnabled = !leftHandEnabled}, leftHandEnabled = leftHandEnabled)
+                TopBar(
+                    Modifier,
+                    onLeftHandToggle = { leftHandEnabled = !leftHandEnabled },
+                    leftHandEnabled = leftHandEnabled
+                )
             }
         ) { innerPadding ->
             Column(
@@ -259,7 +319,9 @@ private fun MainScreen() {
                     .padding(innerPadding)
 //            verticalArrangement = Arrangement.SpaceAround
             ) {
-                Spacer(modifier = Modifier.weight(0.1f))
+                Spacer(modifier = Modifier.weight(0.04f))
+                DuaDropDown()
+                Spacer(modifier = Modifier.weight(0.025f))
                 Display(modifier = Modifier, count)
                 Spacer(modifier = Modifier.weight(0.25f))
                 if (leftHandEnabled)
