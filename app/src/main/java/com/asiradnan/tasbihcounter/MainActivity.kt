@@ -105,7 +105,7 @@ fun TopBar(modifier: Modifier = Modifier, onLeftHandToggle: () -> Unit, leftHand
         navigationIcon = {
             IconButton(onClick = {}) {
                 Icon(
-                    painter = painterResource(R.drawable.tasbih),
+                    painter = painterResource(R.drawable.tasbih_outlined),
                     contentDescription = "Moon icon as logo"
                 )
             }
