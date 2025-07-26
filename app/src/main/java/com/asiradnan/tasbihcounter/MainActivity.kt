@@ -53,6 +53,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -203,7 +206,12 @@ fun DuaDropDown(
 }
 
 @Composable
-fun Display(modifier: Modifier = Modifier, count: Int, currentProgress: Float, showProgressBar: Boolean = false) {
+fun Display(
+    modifier: Modifier = Modifier,
+    count: Int,
+    currentProgress: Float,
+    showProgressBar: Boolean = false
+) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth(0.8f),
@@ -340,6 +348,8 @@ private fun MainScreen() {
     var leftHandEnabled by rememberSaveable { mutableStateOf(false) }
     var itemPosition by rememberSaveable { mutableStateOf(0) }
     var userThemePreference by rememberSaveable { mutableStateOf(false) }
+    val hapticFeedback: HapticFeedback = LocalHapticFeedback.current
+
     TasbihCounterTheme(darkTheme = userThemePreference) {
         Scaffold(
             topBar = {
@@ -348,7 +358,7 @@ private fun MainScreen() {
                     onLeftHandToggle = { leftHandEnabled = !leftHandEnabled },
                     leftHandEnabled = leftHandEnabled,
                     darkEnabled = userThemePreference,
-                    darkEnabledToggle = { userThemePreference = !userThemePreference}
+                    darkEnabledToggle = { userThemePreference = !userThemePreference }
                 )
             }
         ) { innerPadding ->
@@ -378,14 +388,24 @@ private fun MainScreen() {
                     LeftHandButtons(
                         modifier = Modifier,
                         count,
-                        onIncrement = { count++ },
+                        onIncrement = {
+                            count++
+                            if (itemPosition > 0 && (count % 33 == 32 || count % 33 == 0)) hapticFeedback.performHapticFeedback(
+                                HapticFeedbackType.LongPress
+                            )
+                        },
                         onDecrement = { count-- }
                     )
                 else
                     RightHandButtons(
                         modifier = Modifier,
                         count,
-                        onIncrement = { count++ },
+                        onIncrement = {
+                            count++
+                            if (itemPosition > 0 && (count % 33 == 32 || count % 33 == 0)) hapticFeedback.performHapticFeedback(
+                                HapticFeedbackType.LongPress
+                            )
+                        },
                         onDecrement = { count-- }
                     )
                 Spacer(modifier = Modifier.weight(0.06f))
