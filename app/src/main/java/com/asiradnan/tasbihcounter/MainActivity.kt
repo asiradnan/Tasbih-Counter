@@ -4,8 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +40,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Cached
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,19 +60,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.asiradnan.tasbihcounter.components.DisplayWithProgressBorder
 import com.asiradnan.tasbihcounter.ui.theme.TasbihCounterTheme
+import com.asiradnan.tasbihcounter.ui.theme.primaryLight
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -164,7 +180,7 @@ fun DuaDropDown(
             .fillMaxWidth(0.8f),
     ) {
         OutlinedCard(
-            border = ButtonDefaults.outlinedButtonBorder(true).copy(width = 1.5.dp),
+            border = BorderStroke(width = 1.5.dp, color = MaterialTheme.colorScheme.secondary),
             shape = MaterialTheme.shapes.small,
 //            elevation = CardDefaults.outlinedCardElevation(1.dp)
         )
@@ -215,7 +231,7 @@ fun Display(
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth(0.8f),
-        border = ButtonDefaults.outlinedButtonBorder(true).copy(width = 2.dp),
+        border = BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.secondary)
     ) {
         val animatedProgress by animateFloatAsState(
             targetValue = currentProgress.coerceIn(0f, 1f),
@@ -225,31 +241,74 @@ fun Display(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = count.toString(),
-                style = MaterialTheme.typography.displayLarge,
-                textAlign = TextAlign.Center,
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            )
+            AnimatedContent(
+                targetState = count,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        slideInVertically { height -> height } + fadeIn() togetherWith
+                                slideOutVertically { height -> -height } + fadeOut()
+                    } else {
+                        slideInVertically { height -> -height } + fadeIn() togetherWith
+                                slideOutVertically { height -> height } + fadeOut()
+                    }.using(
+                        SizeTransform(clip = true)
+                    )
+                },
+                label = "animatedCounterText"
+            ) { targetCount ->
+                Text(
+                    text = targetCount.toString(),
+                    style = MaterialTheme.typography.displayLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                )
+            }
             if (showProgressBar) {
+                Spacer(modifier = modifier.height(8.dp))
                 LinearProgressIndicator(
                     progress = { animatedProgress },
                     modifier = modifier.fillMaxWidth(0.8f),
                 )
+                Spacer(modifier = modifier.height(24.dp))
             }
-            Spacer(modifier = modifier.height(16.dp))
+            else{
+                Spacer(modifier = modifier.height(16.dp))
+            }
+
         }
     }
 }
 
 @Composable
 fun DecrementButton(modifier: Modifier = Modifier, count: Int, onDecrement: () -> Unit) {
+    val scale = remember { Animatable(1f) } // Initial scale
+    val coroutineScope = rememberCoroutineScope()
     Button(
-        onClick = { onDecrement() },
+        onClick = {
+            onDecrement()
+            coroutineScope.launch {
+                // Scale up
+                scale.animateTo(
+                    targetValue = 0.95f,
+                    animationSpec = tween(
+                        durationMillis = 100,
+                        easing = LinearEasing
+                    )
+                )
+                scale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = 100,
+                        easing = LinearEasing
+                    )
+                )
+            }
+        },
         modifier = modifier
-            .aspectRatio(1f),
+            .aspectRatio(1f)
+            .scale(scale.value),
         shape = CircleShape,
         enabled = count > 0,
         colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
@@ -264,10 +323,32 @@ fun DecrementButton(modifier: Modifier = Modifier, count: Int, onDecrement: () -
 
 @Composable
 fun IncrementButton(modifier: Modifier = Modifier, onIncrement: () -> Unit) {
+    val scale = remember { Animatable(1f) } // Initial scale
+    val coroutineScope = rememberCoroutineScope()
     Button(
-        onClick = { onIncrement() },
+        onClick = {
+            onIncrement()
+            coroutineScope.launch {
+                // Scale up
+                scale.animateTo(
+                    targetValue = 0.95f,
+                    animationSpec = tween(
+                        durationMillis = 150,
+                        easing = LinearEasing
+                    )
+                )
+                scale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = 150,
+                        easing = LinearEasing
+                    )
+                )
+            }
+        },
         modifier = modifier
-            .aspectRatio(1f),
+            .aspectRatio(1f)
+            .scale(scale.value),
     ) {
         Icon(
             imageVector = Icons.Filled.Add,
@@ -324,7 +405,7 @@ fun ResetButton(modifier: Modifier = Modifier, onReset: () -> Unit) {
     OutlinedButton(
         onClick = { onReset() },
         modifier = modifier
-            .fillMaxWidth(0.9f),
+            .fillMaxWidth(0.8f),
         shape = MaterialTheme.shapes.medium,
         border = ButtonDefaults.outlinedButtonBorder(true).copy(width = 2.dp),
     ) {
@@ -336,7 +417,7 @@ fun ResetButton(modifier: Modifier = Modifier, onReset: () -> Unit) {
         Text(
             text = "Reset Counter",
             style = MaterialTheme.typography.titleLarge,
-            modifier = modifier.padding(15.dp)
+            modifier = modifier.padding(8.dp)
         )
     }
 }
@@ -369,13 +450,13 @@ private fun MainScreen() {
                     .padding(innerPadding)
 //            verticalArrangement = Arrangement.SpaceAround
             ) {
-                Spacer(modifier = Modifier.weight(0.03f))
+                Spacer(modifier = Modifier.weight(0.05f))
                 DuaDropDown(
                     itemPosition = itemPosition,
                     changeItemPosition = { idx ->
                         if (idx != itemPosition) count = 0; itemPosition = idx
                     })
-                Spacer(modifier = Modifier.weight(0.025f))
+                Spacer(modifier = Modifier.weight(0.03f))
                 Display(
                     modifier = Modifier,
                     count = count,
@@ -408,9 +489,9 @@ private fun MainScreen() {
                         },
                         onDecrement = { count-- }
                     )
-                Spacer(modifier = Modifier.weight(0.06f))
+                Spacer(modifier = Modifier.weight(0.1f))
                 ResetButton(modifier = Modifier, onReset = { count = 0 })
-                Spacer(modifier = Modifier.weight(0.04f))
+                Spacer(modifier = Modifier.weight(0.06f))
             }
         }
 
