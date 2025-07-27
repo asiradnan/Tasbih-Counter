@@ -1,5 +1,9 @@
 package com.asiradnan.tasbihcounter
 
+import android.content.Context
+import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -66,8 +70,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -180,26 +188,27 @@ fun DuaDropDown(
             .fillMaxWidth(0.8f),
     ) {
         OutlinedCard(
-            border = BorderStroke(width = 1.5.dp, color = MaterialTheme.colorScheme.secondary),
-            shape = MaterialTheme.shapes.small,
-//            elevation = CardDefaults.outlinedCardElevation(1.dp)
+            border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.secondary),
+            shape = MaterialTheme.shapes.medium,
+            elevation = CardDefaults.outlinedCardElevation(2.dp),
         )
         {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = modifier
-                    .padding(all = 12.dp)
+                    .padding(vertical = 6.dp, horizontal = 16.dp)
                     .clickable { expanded = !expanded }
                     .fillMaxWidth()
             ) {
 
-                Text(text = duas[itemPosition], style = MaterialTheme.typography.titleMedium)
+                Text(text = duas[itemPosition], style = MaterialTheme.typography.titleSmall)
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    modifier = modifier.size(32.dp)
-                )
+                    modifier = modifier.size(36.dp),
+
+                    )
             }
         }
         DropdownMenu(
@@ -231,7 +240,9 @@ fun Display(
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth(0.8f),
-        border = BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.secondary)
+        border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.secondary),
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.outlinedCardElevation(defaultElevation = 4.dp)
     ) {
         val animatedProgress by animateFloatAsState(
             targetValue = currentProgress.coerceIn(0f, 1f),
@@ -259,6 +270,7 @@ fun Display(
                 Text(
                     text = targetCount.toString(),
                     style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -273,10 +285,6 @@ fun Display(
                 )
                 Spacer(modifier = modifier.height(24.dp))
             }
-            else{
-                Spacer(modifier = modifier.height(16.dp))
-            }
-
         }
     }
 }
@@ -333,14 +341,14 @@ fun IncrementButton(modifier: Modifier = Modifier, onIncrement: () -> Unit) {
                 scale.animateTo(
                     targetValue = 0.95f,
                     animationSpec = tween(
-                        durationMillis = 150,
+                        durationMillis = 100,
                         easing = LinearEasing
                     )
                 )
                 scale.animateTo(
                     targetValue = 1f,
                     animationSpec = tween(
-                        durationMillis = 150,
+                        durationMillis = 100,
                         easing = LinearEasing
                     )
                 )
@@ -406,9 +414,10 @@ fun ResetButton(modifier: Modifier = Modifier, onReset: () -> Unit) {
         onClick = { onReset() },
         modifier = modifier
             .fillMaxWidth(0.8f),
-        shape = MaterialTheme.shapes.medium,
-        border = ButtonDefaults.outlinedButtonBorder(true).copy(width = 2.dp),
-    ) {
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.secondary),
+
+        ) {
         Icon(
             imageVector = Icons.Outlined.Cached,
             contentDescription = null,
@@ -416,21 +425,22 @@ fun ResetButton(modifier: Modifier = Modifier, onReset: () -> Unit) {
         )
         Text(
             text = "Reset Counter",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = modifier.padding(8.dp)
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = modifier.padding(10.dp)
         )
     }
 }
 
 
 @Composable
-private fun MainScreen() {
+fun MainScreen() {
     var count by rememberSaveable { mutableStateOf(0) }
     var leftHandEnabled by rememberSaveable { mutableStateOf(false) }
     var itemPosition by rememberSaveable { mutableStateOf(0) }
     var userThemePreference by rememberSaveable { mutableStateOf(false) }
     val hapticFeedback: HapticFeedback = LocalHapticFeedback.current
-
+    val mediaPlayer = remember { MediaPlayer() }
+    val context = LocalContext.current
     TasbihCounterTheme(darkTheme = userThemePreference) {
         Scaffold(
             topBar = {
@@ -460,7 +470,7 @@ private fun MainScreen() {
                 Display(
                     modifier = Modifier,
                     count = count,
-                    currentProgress = if (itemPosition > 0) (count % 34).toFloat() / 33f else 0f,
+                    currentProgress = if (itemPosition > 0) (count / 33f) else 0f,
                     showProgressBar = itemPosition > 0
                 )
 //                DisplayWithProgressBorder(modifier = Modifier, count, progress = if (itemPosition > 0) (count%34).toFloat() / 33f else 0f)
@@ -471,9 +481,8 @@ private fun MainScreen() {
                         count,
                         onIncrement = {
                             count++
-                            if (itemPosition > 0 && (count % 33 == 32 || count % 33 == 0)) hapticFeedback.performHapticFeedback(
-                                HapticFeedbackType.LongPress
-                            )
+                            if (itemPosition > 0 && (count == 32 || count == 0)) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (itemPosition > 0 && count == 33 ) notify(mediaPlayer, context)
                         },
                         onDecrement = { count-- }
                     )
@@ -483,9 +492,8 @@ private fun MainScreen() {
                         count,
                         onIncrement = {
                             count++
-                            if (itemPosition > 0 && (count % 33 == 32 || count % 33 == 0)) hapticFeedback.performHapticFeedback(
-                                HapticFeedbackType.LongPress
-                            )
+                            if (itemPosition > 0 && (count == 32 || count == 0)) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (itemPosition > 0 && count == 33 ) notify(mediaPlayer, context)
                         },
                         onDecrement = { count-- }
                     )
@@ -500,7 +508,33 @@ private fun MainScreen() {
 
 @Preview(widthDp = 360, heightDp = 640)
 @Composable
-private fun PreviewScreen() {
+fun PreviewScreen() {
     MainScreen()
+}
+
+fun notify(mediaPlayer: MediaPlayer, context: Context) {
+    val notificationSoundUri: Uri? =
+        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+    if (notificationSoundUri != null) {
+        if (mediaPlayer.isPlaying) {
+            mediaPlayer.stop()
+            mediaPlayer.reset() // Reset for reuse
+        }
+        mediaPlayer.setDataSource(context, notificationSoundUri)
+        mediaPlayer.prepareAsync() // Prepare asynchronously
+        mediaPlayer.setOnPreparedListener { mp ->
+            mp.setVolume(0.025f, 0.025f)
+            mp.start()
+        }
+        mediaPlayer.setOnCompletionListener { mp ->
+            mp.reset() // Reset after completion for next play
+        }
+        mediaPlayer.setOnErrorListener { _, _, _ ->
+            // Handle error, maybe log it
+            mediaPlayer.reset()
+            true
+        }
+    }
 }
 
